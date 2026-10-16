@@ -85,6 +85,8 @@ export default function OrderPage() {
     [sent, setSent] = useState(false),
     [cooldown, setCooldown] = useState(0);
   const request = useRef(""),
+    checkoutPending = useRef(false),
+    scanPending = useRef(false),
     locked = useRef(false),
     loaded = useRef(false),
     reduced = useReducedMotion();
@@ -107,6 +109,7 @@ export default function OrderPage() {
   }, []);
   useEffect(() => {
     queueMicrotask(() => {
+      if (!new URLSearchParams(location.search).get("code")) setModal("scan");
       try {
         const saved = JSON.parse(
           localStorage.getItem("noiric-cart-v2") || "{}",
@@ -151,7 +154,10 @@ export default function OrderPage() {
     return () => clearTimeout(t);
   }, [cooldown]);
   const scan = useCallback(
-    (value: string) => {
+    async (value: string) => {
+      if (scanPending.current) return;
+      scanPending.current = true;
+      setError("");
       try {
         const url = new URL(value, location.origin),
           code = url.searchParams.get("code");
@@ -160,19 +166,23 @@ export default function OrderPage() {
           !code ||
           !/^[a-f0-9-]{36}$/i.test(code)
         )
-          throw new Error();
+          throw new Error("This is not a valid table QR.");
+        const verified = await api<MenuResponse>("/api/menu?code=" + encodeURIComponent(code));
+        if (!verified.seat) throw new Error(verified.seatError || "This table QR is inactive.");
         history.replaceState(
           null,
           "",
           "/order?code=" + encodeURIComponent(code),
         );
-        setModal("");
-        refresh().catch((e) => setError(e.message));
-      } catch {
-        setError("This is not a valid table QR.");
+        setMenu(verified);
+        setModal(checkoutPending.current ? "cart" : "");
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        scanPending.current = false;
       }
     },
-    [refresh],
+    [],
   );
   const change = (id: string, delta: number) => {
     request.current = newRequestId();
@@ -215,12 +225,14 @@ export default function OrderPage() {
     );
   async function submit() {
     if (locked.current) return;
-    if (menu.settings.require_login && !account.user) {
-      setModal("login");
+    if (!menu.seat) {
+      checkoutPending.current = true;
+      setModal("scan");
       return;
     }
-    if (!menu.seat) {
-      setModal("scan");
+    if (!account.user) {
+      checkoutPending.current = true;
+      setModal("login");
       return;
     }
     locked.current = true;
@@ -241,6 +253,7 @@ export default function OrderPage() {
       setCart({});
       setNotes("");
       setReward(false);
+      checkoutPending.current = false;
       request.current = newRequestId();
       setModal("");
       setTab("Orders");
@@ -266,7 +279,7 @@ export default function OrderPage() {
         }),
       });
       if (sent) {
-        setModal("");
+        setModal(checkoutPending.current ? "cart" : "");
         setSent(false);
         setOtp("");
         await refresh();
@@ -758,7 +771,7 @@ export default function OrderPage() {
               }}
             >
               <p className="muted">
-                Sign in to order and keep your rewards in one place.
+                Sign in or create your account with a verification code. Your cart stays saved.
               </p>
               {account.methods.phone && !sent && (
                 <div className="row">
@@ -928,7 +941,7 @@ export default function OrderPage() {
                 disabled={
                   busy ||
                   !count ||
-                  !name.trim() ||
+                  (!!menu.seat && !!account.user && !name.trim()) ||
                   !menu.settings.ordering_open ||
                   lines.some((d) => !d.available)
                 }
@@ -936,10 +949,10 @@ export default function OrderPage() {
               >
                 {busy
                   ? "Sending to the kitchen…"
-                  : !account.user && menu.settings.require_login
-                    ? "Sign in to order"
-                    : !menu.seat
-                      ? "Scan table QR"
+                  : !menu.seat
+                    ? "Scan table QR"
+                    : !account.user
+                      ? "Sign in / sign up to order"
                       : "Place order · " + money(subtotal - discount)}
               </button>
             </div>

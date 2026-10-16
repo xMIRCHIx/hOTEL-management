@@ -240,7 +240,7 @@ export default function Home() {
 
           {/* Action Buttons */}
           <div className="flex items-center gap-4">
-            <a href="/order" className={`text-xs font-semibold ${isScrolledPastHero ? 'text-coffee-900' : 'text-white'}`}>Order food</a>
+            <a href="/order?scan=1" className={`text-xs font-semibold ${isScrolledPastHero ? 'text-coffee-900' : 'text-white'}`}>Order now</a>
             {/* Instagram Link */}
             <a
               href="https://instagram.com/noiric.cafe"
@@ -629,9 +629,9 @@ export default function Home() {
                         <span className="text-[10px] text-coffee-400 block font-semibold uppercase tracking-wider">Price</span>
                         <span className="font-serif font-extrabold text-lg text-coffee-950">₹{item.price}</span>
                       </div>
-                      <span className="bg-[#2B2523] hover:bg-[#3D3532] text-[#EADACF] px-4 py-2 rounded-full text-[10px] font-bold tracking-wider uppercase select-none shadow-xs border border-[#EADACF]/15">
+                      <a href="/order?scan=1" className="bg-[#2B2523] hover:bg-[#3D3532] text-[#EADACF] px-4 py-3 min-h-11 inline-flex items-center rounded-full text-[10px] font-bold tracking-wider uppercase select-none shadow-xs border border-[#EADACF]/15">
                         Order in Cafe
-                      </span>
+                      </a>
                     </div>
                   </div>
                 </div>

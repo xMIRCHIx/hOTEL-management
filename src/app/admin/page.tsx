@@ -1006,15 +1006,10 @@ export default function Admin() {
                   <label className="check">
                     <input
                       type="checkbox"
-                      checked={config.require_login}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          require_login: e.target.checked,
-                        })
-                      }
+                      checked
+                      disabled
                     />
-                    Require verified customer sign-in
+                    Verified sign-in is required at checkout. Menu browsing is public.
                   </label>
                 </section>
                 <section className="panel stack">

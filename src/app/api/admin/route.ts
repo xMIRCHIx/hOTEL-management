@@ -115,7 +115,7 @@ export async function POST(req: Request) {
           announcement: text(data.announcement, 240),
           accent_color: data.accent_color,
           ordering_open: data.ordering_open === true,
-          require_login: data.require_login === true,
+          require_login: true,
           wifi_required: data.wifi_required === true,
           wifi_ssid: text(data.wifi_ssid, 32),
           wifi_password: text(data.wifi_password, 63),

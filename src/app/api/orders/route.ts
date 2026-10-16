@@ -9,6 +9,7 @@ import {
 } from "@/lib/order-server";
 import {
   currentUser,
+  seatFor,
   customer,
   settings,
   checkWifi,
@@ -40,10 +41,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     sameOrigin(req);
-    const input = await body(req),
-      config = await settings();
+    const input = await body(req);
+    if (!uuid.test(input.code)) throw new ApiError("Scan the QR on your seat to start an order.");
+    const config = await settings();
     checkWifi(req, config);
-    const user = await currentUser(config.require_login);
+    const user = await currentUser(true);
+    await seatFor(input.code);
     if (user) await customer(user);
     const name = text(input.name, 60),
       notes = text(input.notes, 400);

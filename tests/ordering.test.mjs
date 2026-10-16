@@ -51,6 +51,14 @@ test("public menu hides credentials and refuses guessed seat", async () => {
   assert.equal(invalid.seat, null);
   assert.ok(invalid.seatError);
 });
+test("orders reject a missing QR even when a seat number is supplied", async () => {
+  const response = await request("/api/orders", "POST", {
+    seat: 10, name: "Test", notes: "", requestId: randomUUID(),
+    items: [{ id: "p1", quantity: 1 }],
+  });
+  assert.equal(response.status, 400);
+  assert.match(JSON.stringify(await response.json()), /scan.*QR/i);
+});
 test("foreign-origin and malformed requests are rejected", async () => {
   assert.equal(
     (
